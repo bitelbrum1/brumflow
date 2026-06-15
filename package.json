@@ -1,0 +1,16 @@
+{
+  "name": "vendeai",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "next": "15.3.3",
+    "openai": "^6.42.0",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "replicate": "^1.4.0"
+  }
+}

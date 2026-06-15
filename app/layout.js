@@ -1,0 +1,14 @@
+import "./globals.css";
+
+export const metadata = {
+  title: "VendeAI",
+  description: "SaaS VendeAI",
+};
+
+export default function RootLayout({ children }) {
+  return (
+    <html lang="pt-BR">
+      <body>{children}</body>
+    </html>
+  );
+}
