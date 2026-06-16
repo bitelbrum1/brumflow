@@ -1,13 +1,22 @@
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
 
-const openai = new OpenAI({
-  baseURL: "https://openrouter.ai/api/v1",
-  apiKey: process.env.OPENROUTER_API_KEY,
-});
-
 export async function POST(req) {
   try {
+    const apiKey = process.env.OPENROUTER_API_KEY;
+
+    if (!apiKey) {
+      return NextResponse.json(
+        { erro: "OPENROUTER_API_KEY não encontrada na Vercel" },
+        { status: 500 }
+      );
+    }
+
+    const openai = new OpenAI({
+      baseURL: "https://openrouter.ai/api/v1",
+      apiKey,
+    });
+
     const { produto, publico, plataforma, tom } = await req.json();
 
     if (!produto) {

@@ -1,18 +1,20 @@
 import OpenAI from "openai";
 
-const client = new OpenAI({
-  baseURL: "https://openrouter.ai/api/v1",
-  apiKey: process.env.OPENROUTER_API_KEY,
-});
-
 export async function POST(req) {
   try {
-    if (!process.env.OPENROUTER_API_KEY) {
+    const apiKey = process.env.OPENROUTER_API_KEY;
+
+    if (!apiKey) {
       return Response.json(
-        { error: "OPENROUTER_API_KEY não encontrada no .env.local" },
+        { error: "OPENROUTER_API_KEY não encontrada na Vercel" },
         { status: 500 }
       );
     }
+
+    const client = new OpenAI({
+      baseURL: "https://openrouter.ai/api/v1",
+      apiKey,
+    });
 
     const { produto, publico, objetivo, tom } = await req.json();
 
@@ -24,7 +26,7 @@ export async function POST(req) {
     }
 
     const completion = await client.chat.completions.create({
-      model: "openrouter/free",
+      model: "openrouter/auto",
       messages: [
         {
           role: "system",
@@ -33,13 +35,13 @@ export async function POST(req) {
         },
         {
           role: "user",
-         content: `
+          content: `
 Crie textos profissionais para um banner comercial.
 
 Produto ou serviço: ${produto}
 Público-alvo: ${publico || "público geral"}
-Objetivo: ${objetivo}
-Tom: ${tom}
+Objetivo: ${objetivo || "venda"}
+Tom: ${tom || "profissional"}
 
 Regras importantes:
 - Não invente características técnicas.
@@ -61,14 +63,6 @@ Botão CTA:
 Legenda para post:
 Hashtags:
 3 variações extras de chamada:
-
-Formato:
-Título principal:
-Subtítulo:
-Chamada curta:
-Texto de apoio:
-Botão CTA:
-3 variações extras:
           `,
         },
       ],
@@ -84,8 +78,7 @@ Botão CTA:
 
     return Response.json(
       {
-        error:
-          error?.message || "Erro desconhecido ao gerar banner com IA",
+        error: error?.message || "Erro desconhecido ao gerar banner com IA",
       },
       { status: 500 }
     );
