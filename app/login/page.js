@@ -1,56 +1,60 @@
 "use client";
 
 import { useState } from "react";
-
-const usuarios = [
-  {
-    nome: "Administrador",
-    email: "admin@brumflow.com",
-    senha: "123456",
-    perfil: "admin",
-  },
-  {
-    nome: "Gustavo",
-    email: "gustavo@brumflow.com",
-    senha: "123456",
-    perfil: "admin",
-  },
-  {
-    nome: "Teste",
-    email: "teste@brumflow.com",
-    senha: "123456",
-    perfil: "usuario",
-  },
-];
+import { supabase } from "../../lib/supabase";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
+  const [carregando, setCarregando] = useState(false);
 
-  function entrar(e) {
-    e.preventDefault();
+async function entrar(e) {
+  e.preventDefault();
 
+  if (!email || !senha) {
+    alert("Preencha email e senha");
+    return;
+  }
+
+  setCarregando(true);
+
+  const { error } = await supabase.auth.signInWithPassword({
+    email,
+    password: senha,
+  });
+
+  setCarregando(false);
+
+  if (error) {
+    alert(error.message);
+    console.log(error);
+    return;
+  }
+
+  window.location.href = "/";
+}
+
+  async function cadastrar() {
     if (!email || !senha) {
-      alert("Preencha email e senha");
+      alert("Preencha email e senha para criar a conta");
       return;
     }
 
-    const usuarioEncontrado = usuarios.find(
-      (usuario) =>
-        usuario.email.toLowerCase() === email.toLowerCase() &&
-        usuario.senha === senha
-    );
+    setCarregando(true);
 
-    if (!usuarioEncontrado) {
-      alert("Email ou senha incorretos");
+    const { error } = await supabase.auth.signUp({
+      email,
+      password: senha,
+    });
+
+    setCarregando(false);
+
+    if (error) {
+      alert(error.message);
       return;
     }
 
-    localStorage.setItem("brumflow_user", usuarioEncontrado.email);
-    localStorage.setItem("brumflow_user_name", usuarioEncontrado.nome);
-    localStorage.setItem("brumflow_user_profile", usuarioEncontrado.perfil);
-
-    window.location.href = "/";
+    alert("Conta criada com sucesso! Agora faça login.");
   }
 
   return (
@@ -61,7 +65,7 @@ export default function Login() {
         </div>
 
         <h1>Bem-vindo de volta</h1>
-        <p>Faça login para acessar sua plataforma de vendas com IA.</p>
+        <p>Entre ou crie sua conta para acessar o BrumFlow.</p>
 
         <form onSubmit={entrar} className="loginForm">
           <input
@@ -78,7 +82,23 @@ export default function Login() {
             onChange={(e) => setSenha(e.target.value)}
           />
 
-          <button type="submit">Entrar na plataforma</button>
+          <button type="submit" disabled={carregando}>
+            {carregando ? "Entrando..." : "Entrar na plataforma"}
+          </button>
+
+          <button
+            type="button"
+            onClick={cadastrar}
+            disabled={carregando}
+            style={{
+              marginTop: "10px",
+              background: "transparent",
+              border: "1px solid #7c3aed",
+              color: "#7c3aed",
+            }}
+          >
+            Criar conta
+          </button>
         </form>
       </div>
     </main>

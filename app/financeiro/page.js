@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { supabase } from "../../lib/supabase";
 
 export default function Financeiro() {
   const [descricao, setDescricao] = useState("");
@@ -14,30 +15,46 @@ export default function Financeiro() {
   const [carregou, setCarregou] = useState(false);
 
   useEffect(() => {
-    const salvosFinanceiro = localStorage.getItem("brumflow_financeiro");
-    if (salvosFinanceiro) {
-      setItens(JSON.parse(salvosFinanceiro));
-    }
+    carregarFinanceiro();
 
     const salvosAgendamentos = localStorage.getItem("brumflow_agendamentos");
     if (salvosAgendamentos) {
       setAgendamentos(JSON.parse(salvosAgendamentos));
     }
-
-    setCarregou(true);
   }, []);
 
-  useEffect(() => {
-    if (carregou) {
-      localStorage.setItem("brumflow_financeiro", JSON.stringify(itens));
+  async function carregarFinanceiro() {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      setCarregou(true);
+      return;
     }
-  }, [itens, carregou]);
+
+    const { data, error } = await supabase
+      .from("financeiro")
+      .select("*")
+      .eq("user_id", session.user.id)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.log(error);
+      alert("Erro ao carregar financeiro");
+      setCarregou(true);
+      return;
+    }
+
+    setItens(data || []);
+    setCarregou(true);
+  }
 
   function converterValor(valorDigitado) {
     return Number(String(valorDigitado).replace(",", ".")) || 0;
   }
 
-  const adicionar = (e) => {
+  async function adicionar(e) {
     e.preventDefault();
 
     if (!descricao || !valor) {
@@ -50,27 +67,57 @@ export default function Financeiro() {
       return;
     }
 
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      alert("Usuário não logado");
+      return;
+    }
+
     const novoItem = {
-      id: Date.now(),
+      user_id: session.user.id,
       descricao,
       valor: converterValor(valor),
       tipo,
       categoria: categoria === "Outros" ? outraCategoria : categoria,
-      data: new Date().toLocaleDateString("pt-BR"),
     };
 
-    setItens([novoItem, ...itens]);
+    const { error } = await supabase.from("financeiro").insert(novoItem);
+
+    if (error) {
+      console.log(error);
+      alert("Erro ao salvar lançamento");
+      return;
+    }
 
     setDescricao("");
     setValor("");
     setTipo("receita");
     setCategoria("Vendas");
     setOutraCategoria("");
-  };
 
-  const remover = (id) => {
-    setItens(itens.filter((item) => item.id !== id));
-  };
+    carregarFinanceiro();
+  }
+
+  async function remover(id) {
+    const confirmar = confirm("Deseja excluir este lançamento?");
+    if (!confirmar) return;
+
+    const { error } = await supabase
+      .from("financeiro")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      console.log(error);
+      alert("Erro ao excluir lançamento");
+      return;
+    }
+
+    carregarFinanceiro();
+  }
 
   const receitas = itens
     .filter((item) => item.tipo === "receita")
@@ -199,7 +246,8 @@ export default function Financeiro() {
                 <div>
                   <h3>{item.descricao}</h3>
                   <p>
-                    {item.categoria} • {item.data}
+                    {item.categoria} •{" "}
+                    {new Date(item.created_at).toLocaleDateString("pt-BR")}
                   </p>
                 </div>
 
@@ -211,7 +259,9 @@ export default function Financeiro() {
                     {converterValor(item.valor).toFixed(2)}
                   </strong>
 
-                  <button onClick={() => remover(item.id)}>Excluir</button>
+                  <button type="button" onClick={() => remover(item.id)}>
+                    Excluir
+                  </button>
                 </div>
               </div>
             ))

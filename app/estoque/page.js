@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import styles from "./Estoque.module.css";
+import { supabase } from "../../lib/supabase";  
 
-const STORAGE_KEY = "brumflow_estoque_v2";
 const ITENS_POR_PAGINA = 8;
 
 const categoriasPadrao = [
@@ -70,35 +70,65 @@ export default function EstoquePage() {
   const [paginaAtual, setPaginaAtual] = useState(1);
   const [produtoEditando, setProdutoEditando] = useState(null);
 
-  useEffect(() => {
-    try {
-      const dados = localStorage.getItem(STORAGE_KEY);
+  
 
-      if (dados) {
-        const parsed = JSON.parse(dados);
-        setProdutos(parsed.produtos || []);
-        setMovimentacoes(parsed.movimentacoes || []);
-      }
-    } catch {
-      localStorage.removeItem(STORAGE_KEY);
-    } finally {
-      setCarregado(true);
-    }
-  }, []);
+useEffect(() => {
+  carregarProdutos();
+  carregarMovimentacoes();
+}, []);
 
-  useEffect(() => {
-    if (!carregado) return;
+async function carregarProdutos() {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
 
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify({
-        produtos,
-        movimentacoes,
-      })
-    );
-  }, [produtos, movimentacoes, carregado]);
+  if (!session) {
+    setCarregado(true);
+    return;
+  }
 
-  function cadastrarProduto(e) {
+  const { data, error } = await supabase
+    .from("produtos")
+    .select("*")
+    .eq("user_id", session.user.id)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.log(error);
+    setCarregado(true);
+    return;
+  }
+
+  setProdutos(data || []);
+  setCarregado(true);
+}
+async function carregarMovimentacoes() {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session) return;
+
+  const { data, error } = await supabase
+    .from("movimentacoes")
+    .select(`
+      *,
+      produtos (
+        nome
+      )
+    `)
+    .eq("user_id", session.user.id)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.log(error);
+    return;
+  }
+
+  setMovimentacoes(data || []);
+}
+
+    async function cadastrarProduto(e) {
     e.preventDefault();
 
     if (!form.nome || !form.custo || !form.venda || !form.quantidade) {
@@ -122,74 +152,112 @@ export default function EstoquePage() {
     };
 
     const novaMovimentacao = {
-      id: crypto.randomUUID(),
-      produtoId: novoProduto.id,
-      produtoNome: novoProduto.nome,
-      tipo: "entrada",
-      quantidade: novoProduto.quantidade,
-      observacao: "Cadastro inicial do produto",
-      data: new Date().toISOString(),
-    };
+  id: crypto.randomUUID(),
+  produtoId: novoProduto.id,
+  produtoNome: novoProduto.nome,
+  tipo: "entrada",
+  quantidade: novoProduto.quantidade,
+  observacao: "Cadastro inicial do produto",
+  data: new Date().toISOString(),
+};
 
-    setProdutos((atual) => [novoProduto, ...atual]);
-    setMovimentacoes((atual) => [novaMovimentacao, ...atual]);
-    setForm(produtoInicial);
+const {
+  data: { session },
+} = await supabase.auth.getSession();
+
+const produtoSupabase = {
+  id: novoProduto.id,
+  user_id: session.user.id,
+  nome: novoProduto.nome,
+  sku: novoProduto.sku,
+  codigo_barras: novoProduto.codigoBarras,
+  categoria: novoProduto.categoria,
+  fornecedor: novoProduto.fornecedor,
+  custo: novoProduto.custo,
+  venda: novoProduto.venda,
+  quantidade: novoProduto.quantidade,
+  estoque_minimo: novoProduto.estoqueMinimo,
+};
+
+const { error } = await supabase
+  .from("produtos")
+  .insert([produtoSupabase]);
+
+if (error) {
+  console.log(error);
+  alert("Erro ao salvar produto no Supabase");
+  return;
+}
+
+setProdutos((atual) => [novoProduto, ...atual]);
+setMovimentacoes((atual) => [novaMovimentacao, ...atual]);
+setForm(produtoInicial);
+}
+  
+
+  async function registrarMovimento(e) {
+  e.preventDefault();
+
+  const produto = produtos.find((item) => item.id === movimento.produtoId);
+
+  if (!produto || !movimento.quantidade) {
+    alert("Selecione um produto e informe a quantidade.");
+    return;
   }
 
-  function registrarMovimento(e) {
-    e.preventDefault();
+  const quantidadeMovimento = Number(movimento.quantidade);
 
-    const produto = produtos.find((item) => item.id === movimento.produtoId);
-
-    if (!produto || !movimento.quantidade) {
-      alert("Selecione um produto e informe a quantidade.");
-      return;
-    }
-
-    const quantidadeMovimento = Number(movimento.quantidade);
-
-    if (quantidadeMovimento <= 0) {
-      alert("A quantidade precisa ser maior que zero.");
-      return;
-    }
-
-    if (movimento.tipo === "saida" && quantidadeMovimento > produto.quantidade) {
-      alert("Quantidade de saída maior que o estoque disponível.");
-      return;
-    }
-
-    const novaQuantidade =
-      movimento.tipo === "entrada"
-        ? produto.quantidade + quantidadeMovimento
-        : produto.quantidade - quantidadeMovimento;
-
-    setProdutos((atual) =>
-      atual.map((item) =>
-        item.id === produto.id
-          ? {
-              ...item,
-              quantidade: novaQuantidade,
-              atualizadoEm: new Date().toISOString(),
-            }
-          : item
-      )
-    );
-
-    setMovimentacoes((atual) => [
-      {
-        id: crypto.randomUUID(),
-        produtoId: produto.id,
-        produtoNome: produto.nome,
-        tipo: movimento.tipo,
-        quantidade: quantidadeMovimento,
-        observacao: movimento.observacao || "Sem observação",
-        data: new Date().toISOString(),
-      },
-      ...atual,
-    ]);
-
-    setMovimento(movimentoInicial);
+  if (quantidadeMovimento <= 0) {
+    alert("A quantidade precisa ser maior que zero.");
+    return;
   }
+
+  const quantidadeAtual = Number(produto.quantidade);
+
+  if (movimento.tipo === "saida" && quantidadeMovimento > quantidadeAtual) {
+    alert("Quantidade de saída maior que o estoque disponível.");
+    return;
+  }
+
+  const novaQuantidade =
+    movimento.tipo === "entrada"
+      ? quantidadeAtual + quantidadeMovimento
+      : quantidadeAtual - quantidadeMovimento;
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  const { error: erroProduto } = await supabase
+    .from("produtos")
+    .update({ quantidade: novaQuantidade })
+    .eq("id", produto.id)
+    .eq("user_id", session.user.id);
+
+  if (erroProduto) {
+    console.log(erroProduto);
+    alert("Erro ao atualizar estoque.");
+    return;
+  }
+
+  const { error: erroMovimento } = await supabase.from("movimentacoes").insert({
+    user_id: session.user.id,
+    produto_id: produto.id,
+    tipo: movimento.tipo,
+    quantidade: quantidadeMovimento,
+    observacao: movimento.observacao || "Sem observação",
+  });
+
+  if (erroMovimento) {
+    console.log(erroMovimento);
+    alert("Erro ao registrar movimentação.");
+    return;
+  }
+
+  setMovimento(movimentoInicial);
+  await carregarProdutos();
+  await carregarMovimentacoes();
+}
 
   function abrirEdicao(produto) {
     setProdutoEditando({
@@ -201,9 +269,29 @@ export default function EstoquePage() {
     });
   }
 
-  function salvarEdicao(e) {
-    e.preventDefault();
 
+  async function salvarEdicao(e) {
+    e.preventDefault();
+    const { error } = await supabase
+    .from("produtos")
+    .update({
+      nome: produtoEditando.nome,
+      sku: produtoEditando.sku,
+      codigo_barras: produtoEditando.codigoBarras,
+      categoria: produtoEditando.categoria,
+      fornecedor: produtoEditando.fornecedor,
+      custo: Number(produtoEditando.custo),
+      venda: Number(produtoEditando.venda),
+      quantidade: Number(produtoEditando.quantidade),
+      estoque_minimo: Number(produtoEditando.estoqueMinimo),
+    })
+    .eq("id", produtoEditando.id);
+
+if (error) {
+  console.log(error);
+  alert("Erro ao salvar alterações");
+  return;
+}
     setProdutos((atual) =>
       atual.map((produto) =>
         produto.id === produtoEditando.id
@@ -222,9 +310,20 @@ export default function EstoquePage() {
     setProdutoEditando(null);
   }
 
-  function excluirProduto(id) {
+  async function excluirProduto(id) {
     const confirmar = confirm("Deseja excluir este produto do estoque?");
     if (!confirmar) return;
+
+    const { error } = await supabase
+  .from("produtos")
+  .delete()
+  .eq("id", id);
+
+if (error) {
+  console.log(error);
+  alert("Erro ao excluir produto");
+  return;
+}
 
     setProdutos((atual) => atual.filter((produto) => produto.id !== id));
     setMovimentacoes((atual) =>
@@ -656,8 +755,8 @@ export default function EstoquePage() {
             <tbody>
               {movimentacoes.slice(0, 12).map((item) => (
                 <tr key={item.id}>
-                  <td>{new Date(item.data).toLocaleString("pt-BR")}</td>
-                  <td>{item.produtoNome}</td>
+                  <td>{new Date(item.created_at).toLocaleString("pt-BR")}</td>
+                  <td>{item.produtos?.nome || "Produto removido"}</td>
                   <td>
                     <span
                       className={

@@ -1814,3 +1814,145 @@ a {
     text-align: center;
   }
 }
+@media (max-width: 850px) {
+  .page {
+    padding: 14px;
+    overflow-x: hidden;
+  }
+
+  .navbar {
+    flex-direction: row;
+    align-items: center;
+    margin-bottom: 18px;
+  }
+
+  .navbar h2 {
+    font-size: 27px;
+  }
+
+  .userArea {
+    gap: 8px;
+  }
+
+  .userAvatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 13px;
+    font-size: 18px;
+  }
+
+  .logoutBtn,
+  .btnLogin {
+    padding: 11px 15px;
+    font-size: 14px;
+    border-radius: 12px;
+  }
+
+  .hero {
+    min-height: auto;
+    padding: 24px 18px;
+    border-radius: 22px;
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .badge {
+    font-size: 13px;
+    padding: 8px 13px;
+    margin-bottom: 18px;
+  }
+
+  .hero h1 {
+    font-size: 35px;
+    line-height: 1.08;
+    letter-spacing: -1px;
+  }
+
+  .heroText p {
+    font-size: 16px;
+    line-height: 1.55;
+    margin: 18px 0;
+  }
+
+  .benefits {
+    margin-top: 18px;
+    gap: 10px;
+    font-size: 14px;
+  }
+
+  .heroVisual {
+    display: none !important;
+  }
+
+  .features {
+    margin: 24px auto;
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .featureCard {
+    padding: 18px;
+    border-radius: 20px;
+    gap: 15px;
+    align-items: flex-start;
+  }
+
+  .icon {
+    min-width: 58px;
+    width: 58px;
+    height: 58px;
+    border-radius: 17px;
+    font-size: 27px;
+  }
+
+  .featureCard h3 {
+    font-size: 20px;
+    margin-bottom: 6px;
+  }
+
+  .featureCard p {
+    font-size: 14px;
+    line-height: 1.45;
+  }
+
+  .cta {
+    padding: 22px 18px;
+    border-radius: 22px;
+    margin-bottom: 18px;
+  }
+
+  .cta h1,
+  .cta h2 {
+    font-size: 27px;
+    line-height: 1.15;
+    margin: 0;
+  }
+
+  .primaryBtn {
+    width: 100%;
+    text-align: center;
+    padding: 15px;
+    border-radius: 15px;
+  }
+}
+
+@media (max-width: 420px) {
+  .navbar h2 {
+    font-size: 24px;
+  }
+
+  .hero h1 {
+    font-size: 31px;
+  }
+
+  .featureCard {
+    padding: 16px;
+  }
+
+  .icon {
+    min-width: 52px;
+    width: 52px;
+    height: 52px;
+    font-size: 24px;
+  }
+}

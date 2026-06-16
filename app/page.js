@@ -2,29 +2,56 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { supabase } from "../lib/supabase";
 
 export default function Home() {
   const [userEmail, setUserEmail] = useState("");
+  const [carregando, setCarregando] = useState(true);
 
   useEffect(() => {
-    const emailSalvo = localStorage.getItem("brumflow_user");
-    if (emailSalvo) setUserEmail(emailSalvo);
+    async function verificarLogin() {
+      const { data } = await supabase.auth.getSession();
+
+      if (data.session?.user?.email) {
+        setUserEmail(data.session.user.email);
+      } else {
+        setUserEmail("");
+      }
+
+      setCarregando(false);
+    }
+
+    verificarLogin();
   }, []);
 
   const inicial = userEmail ? userEmail.charAt(0).toUpperCase() : "";
 
-  const sair = () => {
-    localStorage.removeItem("brumflow_user");
+  async function sair() {
+    await supabase.auth.signOut();
     setUserEmail("");
-  };
+    window.location.href = "/login";
+  }
 
   const recursos = [
-    { icon: "🤖", title: "IA para Produtos", text: "Crie descrições completas em segundos com inteligência artificial.", link: "/gerador" },
-    { icon: "📦", title: "Controle de Estoque", text: "Gerencie produtos, entradas e saídas de forma simples.", link: "/estoque" },
-    { icon: "💰", title: "Financeiro", text: "Acompanhe fluxo de caixa, receitas, despesas e relatórios.", link: "/financeiro" },
-    { icon: "📅", title: "Agendamento", text: "Organize horários, compromissos e lembretes para clientes.", link: "/agendamento" },
-    { icon: "🚀", title: "Criador de Títulos para Posts", text: "Crie títulos e hashtags profissionais com IA para engajar seus posts.", link: "/banners" },
-  ];
+  { icon: "🤖", title: "IA para Produtos", text: "Crie descrições completas em segundos com inteligência artificial.", link: "/gerador" },
+  { icon: "📦", title: "Controle de Estoque", text: "Gerencie produtos, entradas e saídas de forma simples.", link: "/estoque" },
+  { icon: "💰", title: "Financeiro", text: "Acompanhe fluxo de caixa, receitas, despesas e relatórios.", link: "/financeiro" },
+  { icon: "📅", title: "Agendamento", text: "Organize horários, compromissos e lembretes para clientes.", link: "/agendamento" },
+  { icon: "🚀", title: "Criador de Títulos para Posts", text: "Crie títulos e hashtags profissionais com IA para engajar seus posts.", link: "/banners" },
+  { icon: "📊", title: "Dashboard", text: "Veja gráficos de receitas, despesas, lucro, estoque e agendamentos.", link: "/dashboard" },
+];
+
+  if (carregando) {
+    return (
+      <main className="page">
+        <section className="hero">
+          <div className="heroText">
+            <h1>Carregando BrumFlow...</h1>
+          </div>
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main className="page">
@@ -57,19 +84,13 @@ export default function Home() {
           </p>
 
           <div className="heroActions">
-            <Link href={userEmail ? "/gerador" : "/login"} className="btnPrimary">
-              Teste Grátis
-            </Link>
-
-            <Link href={userEmail ? "/dashboard" : "/login"} className="btnSecondary">
-              Ver Demonstração
-            </Link>
+           
           </div>
 
           <div className="benefits">
-            <span>✓ Sem cartão de crédito</span>
+            <span></span>
             <span>⚡ Configuração rápida</span>
-            <span>🎧 Suporte humanizado</span>
+          
           </div>
         </div>
 
@@ -152,10 +173,7 @@ export default function Home() {
           <h1>Tudo que você precisa para vender mais.</h1>
         </div>
 
-        <Link
-          href={userEmail ? "/gerador" : "/login"}
-          className="primaryBtn"
-        >
+        <Link href={userEmail ? "/gerador" : "/login"} className="primaryBtn">
           Começar agora →
         </Link>
       </section>

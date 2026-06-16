@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { supabase } from "../../lib/supabase";
 
 export default function Agendamento() {
   const [servico, setServico] = useState("");
@@ -17,45 +18,67 @@ export default function Agendamento() {
   const [carregou, setCarregou] = useState(false);
 
   useEffect(() => {
-    const salvos = localStorage.getItem("brumflow_agendamentos");
-    if (salvos) setAgendamentos(JSON.parse(salvos));
-    setCarregou(true);
+    carregarAgendamentos();
   }, []);
-
-  useEffect(() => {
-    if (carregou) {
-      localStorage.setItem("brumflow_agendamentos", JSON.stringify(agendamentos));
-    }
-  }, [agendamentos, carregou]);
 
   function converterValor(valorDigitado) {
     return Number(String(valorDigitado).replace(",", ".")) || 0;
   }
 
-  function salvarNoFinanceiro(agendamento, novoStatus) {
-    const financeiroSalvo = localStorage.getItem("brumflow_financeiro");
-    let financeiro = financeiroSalvo ? JSON.parse(financeiroSalvo) : [];
+  async function carregarAgendamentos() {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
 
-    financeiro = financeiro.filter(
-      (item) => item.origemAgendamentoId !== agendamento.id
-    );
+    if (!session) {
+      setCarregou(true);
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("agendamentos")
+      .select("*")
+      .eq("user_id", session.user.id)
+      .order("data", { ascending: true })
+      .order("horario", { ascending: true });
+
+    if (error) {
+      console.log(error);
+      alert("Erro ao carregar agendamentos");
+      setCarregou(true);
+      return;
+    }
+
+    setAgendamentos(data || []);
+    setCarregou(true);
+  }
+
+  async function salvarNoFinanceiro(agendamento, novoStatus) {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) return;
+
+    await supabase
+      .from("financeiro")
+      .delete()
+      .eq("origem_agendamento_id", agendamento.id)
+      .eq("user_id", session.user.id);
 
     if (novoStatus === "Realizado") {
-      financeiro.unshift({
-        id: Date.now(),
+      await supabase.from("financeiro").insert({
+        user_id: session.user.id,
         descricao: `Serviço realizado: ${agendamento.servico}`,
         valor: converterValor(agendamento.valor),
         tipo: "receita",
         categoria: "Serviços",
-        data: new Date().toLocaleDateString("pt-BR"),
-        origemAgendamentoId: agendamento.id,
+        origem_agendamento_id: agendamento.id,
       });
     }
-
-    localStorage.setItem("brumflow_financeiro", JSON.stringify(financeiro));
   }
 
-  function adicionar(e) {
+  async function adicionar(e) {
     e.preventDefault();
 
     if (!servico || !cliente || !data || !horario || !valor) {
@@ -63,8 +86,17 @@ export default function Agendamento() {
       return;
     }
 
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      alert("Usuário não logado");
+      return;
+    }
+
     const novo = {
-      id: Date.now(),
+      user_id: session.user.id,
       servico,
       cliente,
       funcionario,
@@ -75,10 +107,20 @@ export default function Agendamento() {
       observacao,
     };
 
-    setAgendamentos([novo, ...agendamentos]);
+    const { data: criado, error } = await supabase
+      .from("agendamentos")
+      .insert(novo)
+      .select()
+      .single();
+
+    if (error) {
+      console.log(error);
+      alert("Erro ao salvar agendamento");
+      return;
+    }
 
     if (status === "Realizado") {
-      salvarNoFinanceiro(novo, "Realizado");
+      await salvarNoFinanceiro(criado, "Realizado");
     }
 
     setServico("");
@@ -89,35 +131,48 @@ export default function Agendamento() {
     setValor("");
     setStatus("Agendado");
     setObservacao("");
+
+    carregarAgendamentos();
   }
 
-  function remover(id) {
-    setAgendamentos(agendamentos.filter((item) => item.id !== id));
+  async function remover(id) {
+    const confirmar = confirm("Deseja excluir este agendamento?");
+    if (!confirmar) return;
 
-    const financeiroSalvo = localStorage.getItem("brumflow_financeiro");
-    let financeiro = financeiroSalvo ? JSON.parse(financeiroSalvo) : [];
+    await supabase.from("financeiro").delete().eq("origem_agendamento_id", id);
 
-    financeiro = financeiro.filter((item) => item.origemAgendamentoId !== id);
+    const { error } = await supabase.from("agendamentos").delete().eq("id", id);
 
-    localStorage.setItem("brumflow_financeiro", JSON.stringify(financeiro));
-  }
-
-  function atualizarStatus(id, novoStatus) {
-    const agendamento = agendamentos.find((item) => item.id === id);
-
-    const atualizados = agendamentos.map((item) =>
-      item.id === id ? { ...item, status: novoStatus } : item
-    );
-
-    setAgendamentos(atualizados);
-
-    if (agendamento) {
-      salvarNoFinanceiro(agendamento, novoStatus);
+    if (error) {
+      console.log(error);
+      alert("Erro ao excluir agendamento");
+      return;
     }
+
+    carregarAgendamentos();
+  }
+
+  async function atualizarStatus(id, novoStatus) {
+    const agendamento = agendamentos.find((item) => item.id === id);
+    if (!agendamento) return;
+
+    const { error } = await supabase
+      .from("agendamentos")
+      .update({ status: novoStatus })
+      .eq("id", id);
+
+    if (error) {
+      console.log(error);
+      alert("Erro ao atualizar status");
+      return;
+    }
+
+    await salvarNoFinanceiro(agendamento, novoStatus);
+    carregarAgendamentos();
   }
 
   const filtrados = agendamentos.filter((item) => {
-    const texto = `${item.servico} ${item.cliente} ${item.funcionario} ${item.status}`.toLowerCase();
+    const texto = `${item.servico} ${item.cliente} ${item.funcionario || ""} ${item.status}`.toLowerCase();
     return texto.includes(busca.toLowerCase());
   });
 
@@ -143,51 +198,17 @@ export default function Agendamento() {
           <div className="sheetHeader">
             <div>
               <h1>Agendamentos</h1>
-              <p>
-                Controle seus serviços, clientes, horários, valores e status em formato de planilha.
-              </p>
+              <p>Controle seus serviços, clientes, horários, valores e status em formato de planilha.</p>
             </div>
           </div>
 
           <form onSubmit={adicionar} className="sheetForm">
-            <input
-              placeholder="Serviço prestado"
-              value={servico}
-              onChange={(e) => setServico(e.target.value)}
-            />
-
-            <input
-              placeholder="Cliente"
-              value={cliente}
-              onChange={(e) => setCliente(e.target.value)}
-            />
-
-            <input
-              placeholder="Funcionário"
-              value={funcionario}
-              onChange={(e) => setFuncionario(e.target.value)}
-            />
-
-            <input
-              type="date"
-              value={data}
-              onChange={(e) => setData(e.target.value)}
-            />
-
-            <input
-              type="time"
-              value={horario}
-              onChange={(e) => setHorario(e.target.value)}
-            />
-
-            <input
-              className="valorInput"
-              type="text"
-              inputMode="decimal"
-              placeholder="Valor do serviço. Ex: 150,00"
-              value={valor}
-              onChange={(e) => setValor(e.target.value)}
-            />
+            <input placeholder="Serviço prestado" value={servico} onChange={(e) => setServico(e.target.value)} />
+            <input placeholder="Cliente" value={cliente} onChange={(e) => setCliente(e.target.value)} />
+            <input placeholder="Funcionário" value={funcionario} onChange={(e) => setFuncionario(e.target.value)} />
+            <input type="date" value={data} onChange={(e) => setData(e.target.value)} />
+            <input type="time" value={horario} onChange={(e) => setHorario(e.target.value)} />
+            <input className="valorInput" type="text" inputMode="decimal" placeholder="Valor do serviço. Ex: 150,00" value={valor} onChange={(e) => setValor(e.target.value)} />
 
             <select value={status} onChange={(e) => setStatus(e.target.value)}>
               <option>Agendado</option>
@@ -196,22 +217,13 @@ export default function Agendamento() {
               <option>Pendente</option>
             </select>
 
-            <input
-              placeholder="Observação"
-              value={observacao}
-              onChange={(e) => setObservacao(e.target.value)}
-            />
+            <input placeholder="Observação" value={observacao} onChange={(e) => setObservacao(e.target.value)} />
 
             <button type="submit">Adicionar</button>
           </form>
 
           <div className="sheetTools">
-            <input
-              placeholder="Pesquisar na planilha..."
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
-            />
-
+            <input placeholder="Pesquisar na planilha..." value={busca} onChange={(e) => setBusca(e.target.value)} />
             <span>{filtrados.length} registros</span>
           </div>
 
@@ -234,9 +246,7 @@ export default function Agendamento() {
               <tbody>
                 {filtrados.length === 0 ? (
                   <tr>
-                    <td colSpan="9" className="emptyTable">
-                      Nenhum agendamento cadastrado.
-                    </td>
+                    <td colSpan="9" className="emptyTable">Nenhum agendamento cadastrado.</td>
                   </tr>
                 ) : (
                   filtrados.map((item) => (
@@ -244,9 +254,7 @@ export default function Agendamento() {
                       <td>{item.servico}</td>
                       <td>{item.cliente}</td>
                       <td>{item.funcionario || "-"}</td>
-                      <td>
-                        {new Date(item.data + "T00:00:00").toLocaleDateString("pt-BR")}
-                      </td>
+                      <td>{new Date(item.data + "T00:00:00").toLocaleDateString("pt-BR")}</td>
                       <td>{item.horario}</td>
                       <td>R$ {converterValor(item.valor).toFixed(2)}</td>
                       <td>
@@ -263,11 +271,7 @@ export default function Agendamento() {
                       </td>
                       <td>{item.observacao || "-"}</td>
                       <td>
-                        <button
-                          type="button"
-                          className="deleteTableBtn"
-                          onClick={() => remover(item.id)}
-                        >
+                        <button type="button" className="deleteTableBtn" onClick={() => remover(item.id)}>
                           Excluir
                         </button>
                       </td>
