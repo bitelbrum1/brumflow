@@ -39,9 +39,7 @@ export default function Agendamento() {
       .from("agendamentos")
       .select("*")
       .eq("user_id", session.user.id)
-      .order("data", { ascending: true })
-      .order("horario", { ascending: true });
-
+      .order("created_at", { ascending: false });
     if (error) {
       console.log(error);
       alert("Erro ao carregar agendamentos");
