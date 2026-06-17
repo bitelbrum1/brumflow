@@ -16,11 +16,33 @@ export default function Agendamento() {
   const [busca, setBusca] = useState("");
   const [agendamentos, setAgendamentos] = useState([]);
   const [carregou, setCarregou] = useState(false);
+  const [clientes, setClientes] = useState([]);
+  const [clienteId, setClienteId] = useState("");
 
-  useEffect(() => {
-    carregarAgendamentos();
-  }, []);
+ useEffect(() => {
+  carregarAgendamentos();
+  carregarClientes();
+}, []);
+async function carregarClientes() {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
 
+  if (!session) return;
+
+  const { data, error } = await supabase
+    .from("clientes")
+    .select("*")
+    .eq("user_id", session.user.id)
+    .order("nome", { ascending: true });
+
+  if (error) {
+    console.log(error);
+    return;
+  }
+
+  setClientes(data || []);
+}
   function converterValor(valorDigitado) {
     return Number(String(valorDigitado).replace(",", ".")) || 0;
   }
@@ -80,10 +102,9 @@ export default function Agendamento() {
     e.preventDefault();
 
     if (!servico || !cliente || !data || !horario || !valor) {
-      alert("Preencha serviço, cliente, data, horário e valor");
-      return;
-    }
-
+  alert("Preencha serviço, cliente, data, horário e valor");
+  return;
+}
     const {
       data: { session },
     } = await supabase.auth.getSession();
@@ -93,17 +114,20 @@ export default function Agendamento() {
       return;
     }
 
-    const novo = {
-      user_id: session.user.id,
-      servico,
-      cliente,
-      funcionario,
-      data,
-      horario,
-      valor: converterValor(valor),
-      status,
-      observacao,
-    };
+     const clienteSelecionado = clientes.find((item) => item.id === clienteId);
+
+const novo = {
+  user_id: session.user.id,
+  cliente_id: clienteId || null,
+  servico,
+  cliente: clienteSelecionado?.nome || cliente,
+  funcionario,
+  data,
+  horario,
+  valor: converterValor(valor),
+  status,
+  observacao,
+};
 
     const { data: criado, error } = await supabase
       .from("agendamentos")
@@ -129,6 +153,7 @@ export default function Agendamento() {
     setValor("");
     setStatus("Agendado");
     setObservacao("");
+    setClienteId("");
 
     carregarAgendamentos();
   }
@@ -201,24 +226,87 @@ export default function Agendamento() {
           </div>
 
           <form onSubmit={adicionar} className="sheetForm">
-            <input placeholder="Serviço prestado" value={servico} onChange={(e) => setServico(e.target.value)} />
-            <input placeholder="Cliente" value={cliente} onChange={(e) => setCliente(e.target.value)} />
-            <input placeholder="Funcionário" value={funcionario} onChange={(e) => setFuncionario(e.target.value)} />
-            <input type="date" value={data} onChange={(e) => setData(e.target.value)} />
-            <input type="time" value={horario} onChange={(e) => setHorario(e.target.value)} />
-            <input className="valorInput" type="text" inputMode="decimal" placeholder="Valor do serviço. Ex: 150,00" value={valor} onChange={(e) => setValor(e.target.value)} />
+  <input
+    placeholder="Serviço prestado"
+    value={servico}
+    onChange={(e) => setServico(e.target.value)}
+  />
 
-            <select value={status} onChange={(e) => setStatus(e.target.value)}>
-              <option>Agendado</option>
-              <option>Realizado</option>
-              <option>Cancelado</option>
-              <option>Pendente</option>
-            </select>
+  <select
+    value={clienteId}
+    onChange={(e) => {
+      setClienteId(e.target.value);
 
-            <input placeholder="Observação" value={observacao} onChange={(e) => setObservacao(e.target.value)} />
+      const selecionado = clientes.find(
+        (item) => item.id === e.target.value
+      );
 
-            <button type="submit">Adicionar</button>
-          </form>
+      setCliente(selecionado?.nome || "");
+    }}
+  >
+    <option value="">Selecionar cliente cadastrado</option>
+
+    {clientes.map((item) => (
+      <option key={item.id} value={item.id}>
+        {item.nome}
+      </option>
+    ))}
+  </select>
+
+  <input
+    placeholder="Ou digite o nome do cliente"
+    value={cliente}
+    onChange={(e) => {
+      setCliente(e.target.value);
+      setClienteId("");
+    }}
+  />
+
+  <input
+    placeholder="Funcionário"
+    value={funcionario}
+    onChange={(e) => setFuncionario(e.target.value)}
+  />
+
+  <input
+    type="date"
+    value={data}
+    onChange={(e) => setData(e.target.value)}
+  />
+
+  <input
+    type="time"
+    value={horario}
+    onChange={(e) => setHorario(e.target.value)}
+  />
+
+  <input
+    className="valorInput"
+    type="text"
+    inputMode="decimal"
+    placeholder="Valor do serviço. Ex: 150,00"
+    value={valor}
+    onChange={(e) => setValor(e.target.value)}
+  />
+
+  <select
+    value={status}
+    onChange={(e) => setStatus(e.target.value)}
+  >
+    <option>Agendado</option>
+    <option>Realizado</option>
+    <option>Cancelado</option>
+    <option>Pendente</option>
+  </select>
+
+  <input
+    placeholder="Observação"
+    value={observacao}
+    onChange={(e) => setObservacao(e.target.value)}
+  />
+
+  <button type="submit">Adicionar</button>
+</form>
 
           <div className="sheetTools">
             <input placeholder="Pesquisar na planilha..." value={busca} onChange={(e) => setBusca(e.target.value)} />
