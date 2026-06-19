@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
+import ProtectedRoute from "../components/ProtectedRoute";
 
 export default function Financeiro() {
   const [descricao, setDescricao] = useState("");
@@ -140,6 +141,7 @@ export default function Financeiro() {
   }
 
   return (
+     <ProtectedRoute recurso="financeiro">
     <main className="financePage">
       <header className="financeHeader">
         <div>
@@ -269,5 +271,6 @@ export default function Financeiro() {
         </div>
       </section>
     </main>
+    </ProtectedRoute>
   );
 }

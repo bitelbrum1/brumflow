@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
+import ProtectedRoute from "../components/ProtectedRoute";
 
 export default function Agendamento() {
   const [servico, setServico] = useState("");
@@ -202,6 +203,7 @@ const novo = {
   if (!carregou) return null;
 
   return (
+     <ProtectedRoute recurso="agendamento">
     <main className="scheduleSheetPage">
       <div className="sheetLayout">
         <aside className="sheetSidebar">
@@ -370,5 +372,6 @@ const novo = {
         </section>
       </div>
     </main>
+    </ProtectedRoute>
   );
 }

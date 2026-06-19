@@ -18,7 +18,7 @@ export default function Home() {
       if (data.session?.user?.email) {
         setUserEmail(data.session.user.email);
 
-        const assinatura = await buscarOuCriarAssinatura(data.session.user.id);
+        const assinatura = await buscarOuCriarAssinatura(data.session.user)
 
        if (assinatura?.plano && assinatura?.status === "ativo") {
   setPlano(assinatura.plano);
@@ -45,11 +45,39 @@ export default function Home() {
 
   const recursos = [
     {
+      recurso: "criador-titulos",
+      icon: "🚀",
+      title: "Criador de Títulos para Posts",
+      text: "Crie títulos e hashtags profissionais com IA para engajar seus posts.",
+      link: "/banners",
+    },
+    {
       recurso: "ia-produtos",
       icon: "🤖",
       title: "IA para Produtos",
       text: "Crie descrições completas em segundos com inteligência artificial.",
       link: "/gerador",
+    },
+      {
+      recurso: "agendamento",
+      icon: "📅",
+      title: "Agendamento",
+      text: "Organize horários, compromissos e lembretes para clientes.",
+      link: "/agendamento",
+    },
+    {
+      recurso: "clientes",
+      icon: "👥",
+      title: "Clientes",
+      text: "Cadastre clientes, contatos, WhatsApp e observações em um CRM completo.",
+      link: "/clientes",
+    },
+     {
+      recurso: "dashboard",
+      icon: "📊",
+      title: "Dashboard",
+      text: "Veja gráficos de receitas, despesas, lucro, estoque e agendamentos.",
+      link: "/dashboard",
     },
     {
       recurso: "estoque",
@@ -65,34 +93,7 @@ export default function Home() {
       text: "Acompanhe fluxo de caixa, receitas, despesas e relatórios.",
       link: "/financeiro",
     },
-    {
-      recurso: "agendamento",
-      icon: "📅",
-      title: "Agendamento",
-      text: "Organize horários, compromissos e lembretes para clientes.",
-      link: "/agendamento",
-    },
-    {
-      recurso: "criador-titulos",
-      icon: "🚀",
-      title: "Criador de Títulos para Posts",
-      text: "Crie títulos e hashtags profissionais com IA para engajar seus posts.",
-      link: "/banners",
-    },
-    {
-      recurso: "dashboard",
-      icon: "📊",
-      title: "Dashboard",
-      text: "Veja gráficos de receitas, despesas, lucro, estoque e agendamentos.",
-      link: "/dashboard",
-    },
-    {
-      recurso: "clientes",
-      icon: "👥",
-      title: "Clientes",
-      text: "Cadastre clientes, contatos, WhatsApp e observações em um CRM completo.",
-      link: "/clientes",
-    },
+
   ];
 
   if (carregando) {

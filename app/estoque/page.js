@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import styles from "./Estoque.module.css";
 import { supabase } from "../../lib/supabase";  
+import ProtectedRoute from "../components/ProtectedRoute";
 
 const ITENS_POR_PAGINA = 8;
 
@@ -387,6 +388,7 @@ if (error) {
   const maiorCategoria = Math.max(...categoriasResumo.map((item) => item.total), 1);
 
   return (
+  <ProtectedRoute recurso="estoque">
     <main className={styles.page}>
       <section className={styles.header}>
         <div>
@@ -912,6 +914,8 @@ if (error) {
           </form>
         </div>
       )}
+      
     </main>
+    </ProtectedRoute>
   );
 }

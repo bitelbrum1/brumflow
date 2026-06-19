@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { supabase } from "../../lib/supabase";
+import ProtectedRoute from "../components/ProtectedRoute";
 
 export default function Clientes() {
   const [clientes, setClientes] = useState([]);
@@ -75,6 +76,7 @@ const clientesPaginados = clientesFiltrados.slice(inicio, fim);
   if (!carregou) return null;
 
   return (
+     <ProtectedRoute recurso="clientes">
     <main className="crmPage">
       <section className="crmContainer">
         <Link href="/" className="backLink">← Voltar</Link>
@@ -172,5 +174,6 @@ const clientesPaginados = clientesFiltrados.slice(inicio, fim);
         </section>
       </section>
     </main>
+    </ProtectedRoute>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import ProtectedRoute from "../components/ProtectedRoute";
 
 export default function Banners() {
   const [produto, setProduto] = useState("");
@@ -10,6 +11,7 @@ export default function Banners() {
   const [tom, setTom] = useState("Profissional");
   const [resultado, setResultado] = useState("");
   const [carregando, setCarregando] = useState(false);
+
 
   async function gerarBanner(e) {
     e.preventDefault();
@@ -51,6 +53,7 @@ export default function Banners() {
   }
 
   return (
+    <ProtectedRoute recurso="criador-titulos">
     <main className="bannerPage">
       <div className="bannerContainer">
         <Link href="/" className="backLink">
@@ -128,5 +131,6 @@ export default function Banners() {
         </section>
       </div>
     </main>
+    </ProtectedRoute>
   );
 }

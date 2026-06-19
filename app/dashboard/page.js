@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import ProtectedRoute from "../components/ProtectedRoute";
 import Link from "next/link";
 import {
   AreaChart,
@@ -195,6 +196,7 @@ const agendamentosFiltrados = agendamentos.filter((item) =>
   if (!carregou) return null;
 
   return (
+    <ProtectedRoute recurso="dashboard">
     <main className={styles.page}>
       <header className={styles.header}>
         <div>
@@ -373,5 +375,6 @@ const agendamentosFiltrados = agendamentos.filter((item) =>
         </ResponsiveContainer>
       </section>
     </main>
+    </ProtectedRoute>
   );
 }

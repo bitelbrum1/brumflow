@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import ProtectedRoute from "../components/ProtectedRoute";
 
 export default function Gerador() {
   const [produto, setProduto] = useState("");
@@ -56,6 +57,7 @@ export default function Gerador() {
   }
 
   return (
+     <ProtectedRoute recurso="ia-produtos">
     <main className="page">
       <section className="hero">
         <span className="badge">BrumFlow</span>
@@ -310,5 +312,6 @@ export default function Gerador() {
         }
       `}</style>
     </main>
+   </ProtectedRoute>
   );
 }
