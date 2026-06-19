@@ -11,7 +11,7 @@ function dadosDoPlano(externalReference) {
     return {
       plano: "basico",
       tipo_assinatura: "mensal",
-      valor: 0.5,
+      valor: 29.9,
       meses_restantes: 1,
     };
   }
@@ -20,7 +20,7 @@ function dadosDoPlano(externalReference) {
     return {
       plano: "premium",
       tipo_assinatura: "mensal",
-      valor: 69.9,
+      valor: 0.5,
       meses_restantes: 1,
     };
   }
