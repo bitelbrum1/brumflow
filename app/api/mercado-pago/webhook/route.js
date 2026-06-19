@@ -29,7 +29,7 @@ function dadosDoPlano(externalReference) {
     return {
       plano: "premium",
       tipo_assinatura: "trimestral",
-      valor: 54.9,
+      valor: 164.7,
       meses_restantes: 3,
     };
   }
