@@ -43,7 +43,7 @@ export async function POST(req) {
         payer: {
           email: email?.trim().toLowerCase(),
         },
-        external_reference: plano,
+        external_reference: `${plano}|${userId}`,
         back_urls: {
           success: "https://brumflow.vercel.app/planos",
           failure: "https://brumflow.vercel.app/planos",
