@@ -36,10 +36,10 @@ async function liberarPlano(paymentId) {
     };
   }
 
-  const [planoRecebido, userId] = externalReference.split("|");
+const [planoRecebido, userId] = externalReference.split("|");
 
 const plano =
-  planoRecebido.includes("premium") ? "premium" : "basico";
+  planoRecebido === "basico_mensal" ? "premium_mensal" : "premium_trimestral";
 
   const agora = new Date();
   const expiraEm = new Date();
