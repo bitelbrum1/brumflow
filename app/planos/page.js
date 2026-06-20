@@ -16,6 +16,7 @@ export default function Planos() {
   }
 
   const email = data.session.user.email;
+  const userId = data.session.user.id;
 
   const response = await fetch("/api/mercado-pago/criar-assinatura", {
     method: "POST",

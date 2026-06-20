@@ -17,7 +17,7 @@ const PLANOS = {
 
 export async function POST(req) {
   try {
-    const { plano, email } = await req.json();
+    const { plano, email, userId } = await req.json();
 
     const planoSelecionado = PLANOS[plano];
 
