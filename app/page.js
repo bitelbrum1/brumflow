@@ -21,8 +21,11 @@ export default function Home() {
         const assinatura = await buscarOuCriarAssinatura(data.session.user)
 
        if (assinatura?.plano && assinatura?.status === "ativo") {
-  const planoNormalizado =
-    assinatura.plano.includes("premium") ? "premium" : assinatura.plano;
+  if (assinatura?.plano && assinatura?.status === "ativo") {
+  setPlano(assinatura.plano);
+} else {
+  setPlano("sem_plano");
+}
 
   setPlano(planoNormalizado);
 } else {
@@ -122,11 +125,11 @@ export default function Home() {
           {userEmail ? (
             <div className="userArea">
               <div className="userAvatar">{inicial}</div>
-              <div className="planoBadge">
-  {plano === "premium"
-    ? "Premium ⭐"
-    : plano === "premium_trimestral"
+             <div className="planoBadge">
+  {plano === "premium_trimestral"
     ? "Premium Trimestral ⭐"
+    : plano === "premium"
+    ? "Premium ⭐"
     : plano === "basico"
     ? "Básico"
     : "Sem Plano"}
