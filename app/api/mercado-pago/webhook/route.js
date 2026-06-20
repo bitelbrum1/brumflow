@@ -62,9 +62,13 @@ if (planoRecebido === "premium_trimestral") {
   expiraEm.setMonth(expiraEm.getMonth() + 1);
 }
 
-  const agora = new Date();
-  const expiraEm = new Date();
+const expiraEm = new Date();
+
+if (planoRecebido === "premium_trimestral") {
+  expiraEm.setMonth(expiraEm.getMonth() + 3);
+} else {
   expiraEm.setMonth(expiraEm.getMonth() + 1);
+}
 
   const { error } = await supabaseAdmin
   .from("assinaturas")
