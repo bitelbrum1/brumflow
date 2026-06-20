@@ -132,7 +132,7 @@ useEffect(() => {
         <nav>
           {userEmail ? (
             <div className="userArea">
-              <div className="userAvatar">{inicial}</div>
+              <Link href="/perfil" className="userAvatar">{inicial}</Link>
              <div className="planoBadge">
   {plano === "premium_trimestral"
     ? "Premium Trimestral ⭐"
