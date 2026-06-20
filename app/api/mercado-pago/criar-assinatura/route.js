@@ -7,11 +7,11 @@ const PLANOS = {
   },
   premium_mensal: {
     nome: "BrumFlow Premium Mensal",
-    valor: 0.5,
+    valor: 69.9,
   },
   premium_trimestral: {
     nome: "BrumFlow Premium Trimestral",
-    valor: 0.5,
+    valor: 164.7,
   },
 };
 
