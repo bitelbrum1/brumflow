@@ -62,8 +62,6 @@ if (planoRecebido === "premium_trimestral") {
   expiraEm.setMonth(expiraEm.getMonth() + 1);
 }
 
-const expiraEm = new Date();
-
 if (planoRecebido === "premium_trimestral") {
   expiraEm.setMonth(expiraEm.getMonth() + 3);
 } else {
