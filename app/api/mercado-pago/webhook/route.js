@@ -38,6 +38,16 @@ async function liberarPlano(paymentId) {
 
 const [planoRecebido, userId] = externalReference.split("|");
 
+let plano = "premium";
+
+if (planoRecebido === "basico_mensal") {
+  plano = "basico";
+}
+
+if (planoRecebido === "premium_trimestral") {
+  plano = "premium_trimestral";
+}
+
 const plano =
   planoRecebido === "basico_mensal" ? "premium_mensal" : "premium_trimestral";
 

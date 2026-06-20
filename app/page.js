@@ -21,7 +21,10 @@ export default function Home() {
         const assinatura = await buscarOuCriarAssinatura(data.session.user)
 
        if (assinatura?.plano && assinatura?.status === "ativo") {
-  setPlano(assinatura.plano);
+  const planoNormalizado =
+    assinatura.plano.includes("premium") ? "premium" : assinatura.plano;
+
+  setPlano(planoNormalizado);
 } else {
   setPlano("sem_plano");
 }
@@ -120,13 +123,13 @@ export default function Home() {
             <div className="userArea">
               <div className="userAvatar">{inicial}</div>
               <div className="planoBadge">
-  {
-    plano === "premium"
-      ? "Premium ⭐"
-      : plano === "basico"
-      ? "Básico"
-      : "Sem Plano"
-  }
+  {plano === "premium"
+    ? "Premium ⭐"
+    : plano === "premium_trimestral"
+    ? "Premium Trimestral ⭐"
+    : plano === "basico"
+    ? "Básico"
+    : "Sem Plano"}
 </div>
 
               {plano === "sem_plano" && (<Link href="/planos" className="assinarBtn">  Assinar plano</Link>)}
