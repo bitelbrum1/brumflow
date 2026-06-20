@@ -6,84 +6,118 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-export async function POST(req) {
-  try {
-    const body = await req.json();
-
-    const paymentId =
-      body?.data?.id ||
-      body?.id;
-
-    if (!paymentId) {
-      return NextResponse.json({ ok: true });
+async function liberarPlano(paymentId) {
+  const resposta = await fetch(
+    `https://api.mercadopago.com/v1/payments/${paymentId}`,
+    {
+      headers: {
+        Authorization: `Bearer ${process.env.MERCADO_PAGO_ACCESS_TOKEN}`,
+      },
     }
+  );
 
-    const resposta = await fetch(
-      `https://api.mercadopago.com/v1/payments/${paymentId}`,
+  const pagamento = await resposta.json();
+
+  console.log("PAGAMENTO MP:", pagamento);
+
+  if (pagamento.status !== "approved") {
+    return { ok: true, status: pagamento.status };
+  }
+
+  const externalReference = pagamento.external_reference;
+
+  if (!externalReference || !externalReference.includes("|")) {
+    return {
+      ok: false,
+      erro: "external_reference inválido",
+      externalReference,
+    };
+  }
+
+  const [plano, userId] = externalReference.split("|");
+
+  const agora = new Date();
+  const expiraEm = new Date();
+  expiraEm.setMonth(expiraEm.getMonth() + 1);
+
+  const { error } = await supabaseAdmin
+    .from("assinaturas")
+    .upsert(
       {
-        headers: {
-          Authorization: `Bearer ${process.env.MERCADO_PAGO_ACCESS_TOKEN}`,
-        },
+        user_id: userId,
+        plano,
+        status: "ativo",
+        mercado_pago_id: String(pagamento.id),
+        inicio_em: agora.toISOString(),
+        expira_em: expiraEm.toISOString(),
+        email: pagamento.payer?.email || null,
+        tipo_assinatura: "mensal",
+        meses_restantes: 1,
+        valor: pagamento.transaction_amount || 0,
+        proxima_cobranca: expiraEm.toISOString(),
+      },
+      {
+        onConflict: "user_id",
       }
     );
 
-    const pagamento = await resposta.json();
+  if (error) {
+    console.error("ERRO SUPABASE:", error);
+    return { ok: false, erro: error.message };
+  }
 
-    if (pagamento.status !== "approved") {
-      return NextResponse.json({ ok: true, status: pagamento.status });
+  return { ok: true, plano, userId };
+}
+
+export async function POST(req) {
+  try {
+    const url = new URL(req.url);
+    const body = await req.json().catch(() => ({}));
+
+    console.log("WEBHOOK POST BODY:", body);
+    console.log("WEBHOOK POST URL:", req.url);
+
+    const paymentId =
+      body?.data?.id ||
+      body?.id ||
+      url.searchParams.get("data.id") ||
+      url.searchParams.get("id");
+
+    if (!paymentId) {
+      return NextResponse.json({ ok: true, aviso: "sem paymentId" });
     }
 
-    const externalReference = pagamento.external_reference;
+    const resultado = await liberarPlano(paymentId);
 
-    if (!externalReference || !externalReference.includes("|")) {
-      console.error("external_reference inválido:", externalReference);
-      return NextResponse.json({ ok: false });
-    }
-
-    const [plano, userId] = externalReference.split("|");
-
-    const valor = pagamento.transaction_amount || 0;
-    const email = pagamento.payer?.email || null;
-    const mercadoPagoId = String(pagamento.id);
-
-    const agora = new Date();
-    const expiraEm = new Date();
-    expiraEm.setMonth(expiraEm.getMonth() + 1);
-
-    const { error } = await supabaseAdmin
-      .from("assinaturas")
-      .upsert(
-        {
-          user_id: userId,
-          plano: plano,
-          status: "ativo",
-          mercado_pago_id: mercadoPagoId,
-          inicio_em: agora.toISOString(),
-          expira_em: expiraEm.toISOString(),
-          email: email,
-          tipo_assinatura: "mensal",
-          meses_restantes: 1,
-          valor: valor,
-          proxima_cobranca: expiraEm.toISOString(),
-        },
-        {
-          onConflict: "user_id",
-        }
-      );
-
-    if (error) {
-      console.error("Erro ao atualizar assinatura:", error);
-      return NextResponse.json({ ok: false, error: error.message });
-    }
-
-    return NextResponse.json({
-      ok: true,
-      message: "Assinatura liberada com sucesso",
-      userId,
-      plano,
-    });
+    return NextResponse.json(resultado);
   } catch (error) {
-    console.error("Erro no webhook Mercado Pago:", error);
+    console.error("ERRO WEBHOOK POST:", error);
+    return NextResponse.json(
+      { ok: false, error: error.message },
+      { status: 500 }
+    );
+  }
+}
+
+export async function GET(req) {
+  try {
+    const url = new URL(req.url);
+
+    console.log("WEBHOOK GET URL:", req.url);
+
+    const paymentId =
+      url.searchParams.get("data.id") ||
+      url.searchParams.get("id");
+
+    if (!paymentId) {
+      return NextResponse.json({ ok: true, aviso: "sem paymentId GET" });
+    }
+
+    const resultado = await liberarPlano(paymentId);
+
+    return NextResponse.json(resultado);
+  } catch (error) {
+    console.error("ERRO WEBHOOK GET:", error);
     return NextResponse.json(
       { ok: false, error: error.message },
       { status: 500 }

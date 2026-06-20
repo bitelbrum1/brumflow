@@ -40,6 +40,7 @@ export async function POST(req) {
             unit_price: planoSelecionado.valor,
           },
         ],
+        notification_url: "https://brumflow.vercel.app/api/mercado-pago/webhook",
         payer: {
           email: email?.trim().toLowerCase(),
         },
