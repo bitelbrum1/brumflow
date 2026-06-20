@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
-console.log("BODY:", body);
 
 console.log("SUPABASE URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
 
