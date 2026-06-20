@@ -43,25 +43,20 @@ async function liberarPlano(paymentId) {
   expiraEm.setMonth(expiraEm.getMonth() + 1);
 
   const { error } = await supabaseAdmin
-    .from("assinaturas")
-    .upsert(
-      {
-        user_id: userId,
-        plano,
-        status: "ativo",
-        mercado_pago_id: String(pagamento.id),
-        inicio_em: agora.toISOString(),
-        expira_em: expiraEm.toISOString(),
-        email: pagamento.payer?.email || null,
-        tipo_assinatura: "mensal",
-        meses_restantes: 1,
-        valor: pagamento.transaction_amount || 0,
-        proxima_cobranca: expiraEm.toISOString(),
-      },
-      {
-        onConflict: "user_id",
-      }
-    );
+  .from("assinaturas")
+  .upsert(
+    {
+      user_id: userId,
+      plano,
+      status: "ativo",
+      mercado_pago_id: String(pagamento.id),
+      email: pagamento.payer?.email || null,
+      valor: pagamento.transaction_amount || 0
+    },
+    {
+      onConflict: "user_id",
+    }
+  );
 
   if (error) {
     console.error("ERRO SUPABASE:", error);
