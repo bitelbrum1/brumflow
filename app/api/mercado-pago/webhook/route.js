@@ -48,8 +48,6 @@ if (planoRecebido === "premium_trimestral") {
   plano = "premium_trimestral";
 }
 
-const plano =
-  planoRecebido === "basico_mensal" ? "premium_mensal" : "premium_trimestral";
 
   const agora = new Date();
   const expiraEm = new Date();
