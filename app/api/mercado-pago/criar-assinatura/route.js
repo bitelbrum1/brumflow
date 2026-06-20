@@ -11,7 +11,7 @@ const PLANOS = {
   },
   premium_trimestral: {
     nome: "BrumFlow Premium Trimestral",
-    valor: 164.7,
+    valor: 0.5,
   },
 };
 
@@ -46,11 +46,11 @@ export async function POST(req) {
         },
         external_reference: `${plano}|${userId}`,
         back_urls: {
-          success: "https://brumflow.vercel.app/planos",
-          failure: "https://brumflow.vercel.app/planos",
-          pending: "https://brumflow.vercel.app/planos",
-        },
-        auto_return: "approved",
+  success: "https://brumflow.vercel.app/",
+  failure: "https://brumflow.vercel.app/planos",
+  pending: "https://brumflow.vercel.app/planos",
+},
+auto_return: "approved",
       }),
     });
 
