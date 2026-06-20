@@ -26,6 +26,7 @@ export default function Planos() {
     body: JSON.stringify({
       plano,
       email,
+      userId,
     }),
   });
 
