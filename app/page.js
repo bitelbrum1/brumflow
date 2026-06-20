@@ -11,35 +11,43 @@ export default function Home() {
   const [plano, setPlano] = useState("sem_plano");
   const [carregando, setCarregando] = useState(true);
 
-  useEffect(() => {
-    async function verificarLogin() {
-      const { data } = await supabase.auth.getSession();
+useEffect(() => {
+  async function verificarLogin() {
+    try {
+      const { data, error } = await supabase.auth.getSession();
+
+      if (error) {
+        console.error("Erro sessão:", error);
+        setPlano("sem_plano");
+        setUserEmail("");
+        return;
+      }
 
       if (data.session?.user?.email) {
         setUserEmail(data.session.user.email);
 
-        const assinatura = await buscarOuCriarAssinatura(data.session.user)
+        const assinatura = await buscarOuCriarAssinatura(data.session.user);
 
-       if (assinatura?.plano && assinatura?.status === "ativo") {
-  if (assinatura?.plano && assinatura?.status === "ativo") {
-  setPlano(assinatura.plano);
-} else {
-  setPlano("sem_plano");
-}
-
-  setPlano(planoNormalizado);
-} else {
-  setPlano("sem_plano");
-}
+        if (assinatura?.plano && assinatura?.status === "ativo") {
+          setPlano(assinatura.plano);
+        } else {
+          setPlano("sem_plano");
+        }
       } else {
         setUserEmail("");
+        setPlano("sem_plano");
       }
-
+    } catch (error) {
+      console.error("Erro ao verificar login/plano:", error);
+      setPlano("sem_plano");
+      setUserEmail("");
+    } finally {
       setCarregando(false);
     }
+  }
 
-    verificarLogin();
-  }, []);
+  verificarLogin();
+}, []);
 
   const inicial = userEmail ? userEmail.charAt(0).toUpperCase() : "";
 
