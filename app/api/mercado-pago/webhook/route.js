@@ -48,6 +48,19 @@ if (planoRecebido === "premium_trimestral") {
   plano = "premium_trimestral";
 }
 
+const tipoAssinatura =
+  planoRecebido === "premium_trimestral" ? "trimestral" : "mensal";
+
+const mesesRestantes =
+  planoRecebido === "premium_trimestral" ? 3 : 1;
+
+const expiraEm = new Date();
+
+if (planoRecebido === "premium_trimestral") {
+  expiraEm.setMonth(expiraEm.getMonth() + 3);
+} else {
+  expiraEm.setMonth(expiraEm.getMonth() + 1);
+}
 
   const agora = new Date();
   const expiraEm = new Date();
@@ -57,13 +70,17 @@ if (planoRecebido === "premium_trimestral") {
   .from("assinaturas")
   .upsert(
     {
-      user_id: userId,
-      plano,
-      status: "ativo",
-      mercado_pago_id: String(pagamento.id),
-      email: pagamento.payer?.email || null,
-      valor: pagamento.transaction_amount || 0
-    },
+  user_id: userId,
+  plano,
+  status: "ativo",
+  mercado_pago_id: String(pagamento.id),
+  email: pagamento.payer?.email || null,
+  valor: pagamento.transaction_amount || 0,
+  tipo_assinatura: tipoAssinatura,
+  meses_restantes: mesesRestantes,
+  expira_em: expiraEm.toISOString(),
+  proxima_cobranca: expiraEm.toISOString(),
+},
     {
       onConflict: "user_id",
     }
