@@ -31,7 +31,7 @@ async function entrar(e) {
     return;
   }
 
-  window.location.href = "/";
+  window.location.href = "/sistema";
 }
 
   async function cadastrar() {
