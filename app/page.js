@@ -23,9 +23,7 @@ export default function LandingPage() {
         <div className="landingHeroText">
           <div className="landingBadge">🚀 Plataforma completa para negócios</div>
 
-          <h2>
-            Organize seu negócio, venda mais e automatize tarefas com IA.
-          </h2>
+          <h2>Organize seu negócio, venda mais e automatize tarefas com IA.</h2>
 
           <p>
             O BrumFlow reúne inteligência artificial, financeiro, estoque,
@@ -83,8 +81,7 @@ export default function LandingPage() {
           <h3>O que é o BrumFlow?</h3>
           <p>
             É um sistema online para pequenos negócios controlarem tarefas
-            importantes do dia a dia em um só lugar, usando automação e
-            inteligência artificial.
+            importantes do dia a dia em um só lugar, usando automação e IA.
           </p>
         </div>
 
@@ -92,8 +89,7 @@ export default function LandingPage() {
           <h3>Para quem é?</h3>
           <p>
             Para lojas, prestadores de serviço, autônomos, salões, oficinas,
-            pequenos comércios e qualquer negócio que precisa de organização
-            sem complicação.
+            pequenos comércios e negócios que precisam de organização.
           </p>
         </div>
 
@@ -108,8 +104,8 @@ export default function LandingPage() {
         <div className="landingInfo destaque">
           <h3>Quanto custa?</h3>
           <p>
-            O BrumFlow possui plano Básico para recursos com IA e planos Premium
-            para liberar todas as ferramentas de gestão.
+            Plano Básico para recursos com IA e planos Premium para liberar toda
+            a gestão do negócio.
           </p>
 
           <Link href="/planos">Ver planos →</Link>

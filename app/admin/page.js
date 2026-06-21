@@ -1,246 +1,112 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { supabase } from "../../lib/supabase";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { supabase } from "../../lib/supabaseClient";
 
 const ADMIN_EMAIL = "gbitelbrum@gmail.com";
 
 export default function AdminPage() {
+  const [adminEmail, setAdminEmail] = useState("");
+  const [email, setEmail] = useState("");
+  const [dados, setDados] = useState(null);
+  const [mensagem, setMensagem] = useState("");
   const [carregando, setCarregando] = useState(true);
-  const [assinaturas, setAssinaturas] = useState([]);
 
   useEffect(() => {
-    async function iniciar() {
+    async function verificarAdmin() {
       const { data } = await supabase.auth.getSession();
+      const usuarioEmail = data.session?.user?.email || "";
 
-      if (!data.session?.user) {
-        window.location.href = "/login";
+      if (usuarioEmail !== ADMIN_EMAIL) {
+        window.location.href = "/sistema";
         return;
       }
 
-      if (data.session.user.email !== ADMIN_EMAIL) {
-        window.location.href = "/";
-        return;
-      }
-
-      await carregarAssinaturas();
+      setAdminEmail(usuarioEmail);
       setCarregando(false);
     }
 
-    iniciar();
+    verificarAdmin();
   }, []);
 
-  async function carregarAssinaturas() {
-    const { data, error } = await supabase
-      .from("assinaturas")
-      .select("*")
-      .order("created_at", { ascending: false });
-
-    if (error) {
-  console.error("Erro completo ao carregar assinaturas:", error);
-  alert(error.message);
-  return;
-}
-
-    setAssinaturas(data || []);
+  function diasRestantes(expiraEm) {
+    if (!expiraEm) return "Sem data";
+    const diff = new Date(expiraEm) - new Date();
+    if (diff <= 0) return "Expirado";
+    return `${Math.ceil(diff / (1000 * 60 * 60 * 24))} dias`;
   }
 
-  const resumo = useMemo(() => {
-    const total = assinaturas.length;
-    const semPlano = assinaturas.filter((a) => !a.plano || a.plano === "sem_plano").length;
-    const basico = assinaturas.filter((a) => a.plano === "basico" && a.status === "ativo").length;
-    const premiumMensal = assinaturas.filter(
-      (a) => a.plano === "premium" && a.tipo_assinatura === "mensal" && a.status === "ativo"
-    ).length;
-    const premiumTrimestral = assinaturas.filter(
-      (a) => a.plano === "premium" && a.tipo_assinatura === "trimestral" && a.status === "ativo"
-    ).length;
+  async function enviar(acao) {
+    setMensagem("Processando...");
 
-    const mrr = assinaturas
-      .filter((a) => a.status === "ativo")
-      .reduce((total, a) => total + Number(a.valor || 0), 0);
+    const response = await fetch("/api/admin/assinaturas", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ adminEmail, email, acao }),
+    });
 
-    return { total, semPlano, basico, premiumMensal, premiumTrimestral, mrr };
-  }, [assinaturas]);
+    const data = await response.json();
 
-  async function atualizarPlano(id, plano, tipo, valor) {
-    const { error } = await supabase
-      .from("assinaturas")
-      .update({
-        plano,
-        tipo_assinatura: tipo,
-        valor,
-        status: "ativo",
-      })
-      .eq("id", id);
-
-    if (error) {
-      console.log(error);
-      alert("Erro ao atualizar plano");
+    if (!response.ok) {
+      setMensagem(data.error || "Erro.");
       return;
     }
 
-    await carregarAssinaturas();
-  }
-
-  async function cancelarAssinatura(id) {
-    const confirmar = confirm("Deseja cancelar essa assinatura?");
-    if (!confirmar) return;
-
-    const { error } = await supabase
-      .from("assinaturas")
-      .update({
-        plano: "sem_plano",
-        status: "cancelado",
-        valor: 0,
-      })
-      .eq("id", id);
-
-    if (error) {
-      console.log(error);
-      alert("Erro ao cancelar assinatura");
-      return;
-    }
-
-    await carregarAssinaturas();
+    setDados(data);
+    setMensagem(acao === "buscar" ? "Usuário encontrado." : "Plano atualizado.");
   }
 
   if (carregando) {
-    return (
-      <main className="adminPage">
-        <h1>Carregando painel admin...</h1>
-      </main>
-    );
+    return <main className="adminPage"><h1>Carregando...</h1></main>;
   }
 
   return (
     <main className="adminPage">
-      <header className="adminHeader">
-        <div>
-          <span>BrumFlow Admin</span>
-          <h1>Painel Administrativo</h1>
-          <p>Gerencie clientes, planos, status e receita recorrente.</p>
+      <section className="adminCard">
+        <h1>Painel Admin</h1>
+        <p>Busque usuários, veja assinatura e altere planos.</p>
+
+        <input
+          className="adminInput"
+          placeholder="Email do cliente"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+
+        <div className="adminButtons">
+          <button onClick={() => enviar("buscar")}>Buscar Usuário</button>
+          <button onClick={() => enviar("basico")}>Ativar Básico</button>
+          <button onClick={() => enviar("premium")}>Ativar Premium</button>
+          <button onClick={() => enviar("premium_trimestral")}>
+            Ativar Trimestral
+          </button>
+          <button className="danger" onClick={() => enviar("suspender")}>
+            Suspender
+          </button>
         </div>
 
-        <Link href="/" className="adminBack">
-          Voltar
+        {mensagem && <div className="adminMsg">{mensagem}</div>}
+
+        {dados?.assinatura && (
+          <div className="adminDados">
+            <h2>Dados da assinatura</h2>
+            <p><b>Email:</b> {dados.assinatura.email}</p>
+            <p><b>Plano:</b> {dados.assinatura.plano}</p>
+            <p><b>Status:</b> {dados.assinatura.status}</p>
+            <p><b>Tipo:</b> {dados.assinatura.tipo_assinatura || "Não definido"}</p>
+            <p><b>Valor:</b> R$ {dados.assinatura.valor || 0}</p>
+            <p><b>Expira em:</b> {dados.assinatura.expira_em ? new Date(dados.assinatura.expira_em).toLocaleDateString("pt-BR") : "Sem data"}</p>
+            <p><b>Tempo restante:</b> {diasRestantes(dados.assinatura.expira_em)}</p>
+            <p><b>ID Mercado Pago:</b> {dados.assinatura.mercado_pago_id || "Não informado"}</p>
+          </div>
+        )}
+
+        <Link href="/sistema" className="adminVoltar">
+          ← Voltar
         </Link>
-      </header>
-
-      <section className="adminCards">
-        <div className="adminCard">
-          <span>Usuários totais</span>
-          <strong>{resumo.total}</strong>
-        </div>
-
-        <div className="adminCard">
-          <span>Sem plano</span>
-          <strong>{resumo.semPlano}</strong>
-        </div>
-
-        <div className="adminCard">
-          <span>Básico</span>
-          <strong>{resumo.basico}</strong>
-        </div>
-
-        <div className="adminCard">
-          <span>Premium mensal</span>
-          <strong>{resumo.premiumMensal}</strong>
-        </div>
-
-        <div className="adminCard">
-          <span>Premium trimestral</span>
-          <strong>{resumo.premiumTrimestral}</strong>
-        </div>
-
-        <div className="adminCard destaque">
-          <span>Receita mensal</span>
-          <strong>
-            {resumo.mrr.toLocaleString("pt-BR", {
-              style: "currency",
-              currency: "BRL",
-            })}
-          </strong>
-        </div>
-      </section>
-
-      <section className="adminTableBox">
-        <h2>Clientes e assinaturas</h2>
-
-        <div className="adminTableWrapper">
-          <table className="adminTable">
-            <thead>
-              <tr>
-                <th>Nome</th>
-                <th>Email</th>
-                <th>Plano</th>
-                <th>Tipo</th>
-                <th>Status</th>
-                <th>Valor</th>
-                <th>Ações</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {assinaturas.map((item) => (
-                <tr key={item.id}>
-                  <td>{item.nome || "Sem nome"}</td>
-                  <td>{item.email || item.user_id}</td>
-                  <td>{item.plano || "sem_plano"}</td>
-                  <td>{item.tipo_assinatura || "mensal"}</td>
-                  <td>{item.status}</td>
-                  <td>
-                    {Number(item.valor || 0).toLocaleString("pt-BR", {
-                      style: "currency",
-                      currency: "BRL",
-                    })}
-                  </td>
-                  <td>
-                    <div className="adminActions">
-                      <button
-                        onClick={() =>
-                          atualizarPlano(item.id, "basico", "mensal", 29.9)
-                        }
-                      >
-                        Básico
-                      </button>
-
-                      <button
-                        onClick={() =>
-                          atualizarPlano(item.id, "premium", "mensal", 69.9)
-                        }
-                      >
-                        Premium mensal
-                      </button>
-
-                      <button
-                        onClick={() =>
-                          atualizarPlano(item.id, "premium", "trimestral", 54.9)
-                        }
-                      >
-                        Premium trimestral
-                      </button>
-
-                      <button
-                        className="danger"
-                        onClick={() => cancelarAssinatura(item.id)}
-                      >
-                        Cancelar
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-
-              {assinaturas.length === 0 && (
-                <tr>
-                  <td colSpan="7">Nenhuma assinatura encontrada.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
       </section>
     </main>
   );
