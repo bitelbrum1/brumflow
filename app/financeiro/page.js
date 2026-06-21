@@ -145,7 +145,7 @@ export default function Financeiro() {
     <main className="financePage">
       <header className="financeHeader">
         <div>
-          <Link href="/" className="backLink">
+          <Link href="/sistema" className="backLink">
             ← Voltar
           </Link>
           <h1>Financeiro</h1>

@@ -127,7 +127,7 @@ export default function Perfil() {
         </div>
 
         <div className="perfilActions">
-          <Link href="/" className="perfilBtn">
+          <Link href="/sistema" className="perfilBtn">
             ← Voltar
           </Link>
 

@@ -56,7 +56,7 @@ export default function Banners() {
     <ProtectedRoute recurso="criador-titulos">
     <main className="bannerPage">
       <div className="bannerContainer">
-        <Link href="/" className="backLink">
+        <Link href="/sistema" className="backLink">
           ← Voltar
         </Link>
 

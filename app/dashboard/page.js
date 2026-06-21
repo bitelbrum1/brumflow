@@ -200,7 +200,7 @@ const agendamentosFiltrados = agendamentos.filter((item) =>
     <main className={styles.page}>
       <header className={styles.header}>
         <div>
-          <Link href="/" className={styles.back}>
+          <Link href="/sistema" className={styles.back}>
             ← Voltar
           </Link>
           <h1>Dashboard Real</h1>

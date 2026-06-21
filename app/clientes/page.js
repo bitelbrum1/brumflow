@@ -79,7 +79,7 @@ const clientesPaginados = clientesFiltrados.slice(inicio, fim);
      <ProtectedRoute recurso="clientes">
     <main className="crmPage">
       <section className="crmContainer">
-        <Link href="/" className="backLink">← Voltar</Link>
+        <Link href="/sistema" className="backLink">← Voltar</Link>
 
         <div className="crmHeader">
           <div>

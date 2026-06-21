@@ -132,7 +132,7 @@ export default function Planos() {
         </div>
       </section>
 
-      <Link href="/" className="voltarPlanos">
+      <Link href="/sistema" className="voltarPlanos">
         ← Voltar para o sistema
       </Link>
     </main>

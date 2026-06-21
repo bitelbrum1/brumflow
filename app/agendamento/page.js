@@ -211,14 +211,14 @@ const novo = {
             Brum<span>Flow</span>
           </h2>
 
-          <Link href="/" className="sideItem">🏠 Início</Link>
+          <Link href="/sistema" className="sideItem">🏠 Início</Link>
           <Link href="/agendamento" className="sideItem active">📅 Agendamentos</Link>
           <Link href="/financeiro" className="sideItem">💰 Financeiro</Link>
           <Link href="/estoque" className="sideItem">📦 Estoque</Link>
         </aside>
 
         <section className="sheetContent">
-          <Link href="/" className="backLink">← Voltar</Link>
+          <Link href="/sistema" className="backLink">← Voltar</Link>
 
           <div className="sheetHeader">
             <div>
